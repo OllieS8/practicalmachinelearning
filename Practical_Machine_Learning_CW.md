@@ -84,7 +84,7 @@ confusionMatrix(predVal, crossVal$classe)
 ```{r}
 # predictions on testing set
 predTest <- predict(modFit, testing)
-predTest
+print(predTest)
 ```
 
 
