@@ -1,0 +1,123 @@
+---
+title: "Practical Machine Learning Coursework"
+output: html_document
+---
+
+## Packages
+Loading in the relevant packages and setting the seed for reproducibility.
+
+```{r}
+library(caret)
+library(randomForest)
+set.seed(1000)
+```
+
+## Obtaining Data
+Load in the training and testing data (saved locally in the working directory)
+
+```{r}
+#reading in the training and testing data.
+rawTrain <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+## Preprocessing
+I first removed the rows where the new window column was equal to 'yes', as this data is not present in the test data. 
+
+```{r}
+# removing rows with new window = yes - not in test set
+rawTrain <- subset(rawTrain, new_window=="no")
+```
+
+I then split the training data into a training and validation set. I used a 60% split, due to the large amount of data. The validation set was used to assess out of sample error. 
+
+
+```{r}
+# partitioning training data into a training and cross validation set
+inTrain <- createDataPartition(rawTrain$classe,p=0.6,list=FALSE)
+training <- rawTrain[inTrain,]
+crossVal <- rawTrain[-inTrain,]
+```
+
+I then removed the features/columns with near zero variance. 
+
+```{r}
+# removing columns with near zero variance
+ZeroVar <- nearZeroVar(training)
+training <- training[,-ZeroVar]
+```
+
+I then removed the features/columns with 50% or more NA's and missing values.
+
+```{r}
+#removing columns with lots of NA's and missing values
+pctMissing <- sapply(training, function(x) {
+  sum(!(is.na(x) | x == ""))
+})
+
+missingCol <- names(pctMissing[pctMissing < 0.5 * length(training$classe)])
+```
+
+
+In addition, I removed the features/columns that are descriptive.
+
+```{r}
+# removing descriptive features/columns
+descriptiveCol <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", 
+                "cvtd_timestamp", "new_window", "num_window")
+removeCol <- c(missingCol ,descriptiveCol)
+
+training <- training[,!names(training) %in% removeCol]
+
+```
+
+## Training Model
+At first, I chose the random forest method to train my model, due to it's wide and accurate use in classification problems. This model returned good out of sample errors and scored well in the prediction exercise, therefore there was no need to attempt another method, such as boosting or linear discriminant analysis.
+
+```{r}
+# creating model using random forest method. Reduced to 100 trees to speed up processing
+modFit <- train(classe ~ ., method = "rf", data=training, ntree=100)
+```
+
+## Validating Model
+I conducted both in sample and out of sample error assessments. 
+
+### In Sample Validation
+For the in sample error, I compared the training data values to the predictions based on this data. The accuracy was found to be 1. This is because the model was trained on this data, so can result in some overfitting. A more useful assessment is out of sample error.
+
+```{r}
+# in sample error using training data
+predTraining <- predict(modFit, training)
+confusionMatrix(predTraining, training$classe)
+```
+
+### Out of Sample Validation
+For the out of sample error, I compared the validation data values to the predictions based on this data. The accuracy was 0.99, which is very good. Therefore the out of sample error is very low.
+
+```{r}
+# out of sample error using cross validation data
+predVal <- predict(modFit, crossVal)
+confusionMatrix(predVal, crossVal$classe)
+```
+
+## Important Variables
+A plot to show the 10 most important variables:
+
+```{r echo=FALSE}
+varImpObj <- varImp(modFit)
+plot(varImpObj, main = "Top 10 Most Important Variables", top = 10)
+```
+
+## Predicting Test Set Classes
+The following shows the output of the prediction of the test data using the derived random forest model. All predictions were found to be correct when ran through the week 4 quiz.
+
+```{r}
+# predictions on testing set
+predTest <- predict(modFit, testing)
+predTest
+```
+
+
+### *Thank you!*
+
+
