@@ -1,6 +1,8 @@
 ---
 title: "Practical Machine Learning Coursework"
-output: html_document
+output:
+  html_document:
+    keep_md: yes
 ---
 
 ## Packages
@@ -29,7 +31,7 @@ I first removed the rows where the new window column was equal to 'yes', as this
 rawTrain <- subset(rawTrain, new_window=="no")
 ```
 
-I then split the training data into a training and validation set. I used a 60% split, due to the large amount of data. The validation set was used to assess out of sample error. 
+I then split the training data into a training and cross validation set. I used a 60% split, due to the large amount of data. The cross validation set was used to assess out of sample error. 
 
 
 ```{r}
@@ -83,7 +85,7 @@ modFit <- train(classe ~ ., method = "rf", data=training, ntree=100)
 I conducted both in sample and out of sample error assessments. 
 
 ### In Sample Validation
-For the in sample error, I compared the training data values to the predictions based on this data. The accuracy was found to be 1. This is because the model was trained on this data, so can result in some overfitting. A more useful assessment is out of sample error.
+For the in sample error, I compared the training data values to the predictions based on this data and the random forests model. The accuracy was found to be 1. This is because the model was trained on the training data, which can result in some overfitting. A more useful assessment is out of sample error.
 
 ```{r}
 # in sample error using training data
@@ -91,8 +93,8 @@ predTraining <- predict(modFit, training)
 confusionMatrix(predTraining, training$classe)
 ```
 
-### Out of Sample Validation
-For the out of sample error, I compared the validation data values to the predictions based on this data. The accuracy was 0.99, which is very good. Therefore the out of sample error is very low.
+### Out of Sample Validation (using Cross Validation)
+For the out of sample error, I compared the cross validation data values to the predictions based on this data and the random forests model. The accuracy was 0.99, which is very good. Therefore the out of sample error is very low.
 
 ```{r}
 # out of sample error using cross validation data
@@ -109,7 +111,7 @@ plot(varImpObj, main = "Top 10 Most Important Variables", top = 10)
 ```
 
 ## Predicting Test Set Classes
-The following shows the output of the prediction of the test data using the derived random forest model. All predictions were found to be correct when ran through the week 4 quiz.
+The following shows the output of the test data class predictions using the derived random forest model. All predictions were found to be correct when ran through the week 4 quiz.
 
 ```{r}
 # predictions on testing set
